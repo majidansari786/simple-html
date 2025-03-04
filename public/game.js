@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function startGame() {
     console.log('startGame called');
     
-    // Basic Three.js setup to test rendering
+    // Basic Three.js setup
     if (!window.THREE) {
       console.error('Three.js not loaded');
       return;
@@ -45,24 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(renderer.domElement);
     console.log('Renderer initialized', renderer.domElement);
 
-    // Test with a simple cube to ensure rendering works
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-    camera.position.z = 5;
-
-    function animate() {
-      requestAnimationFrame(animate);
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-      renderer.render(scene, camera);
-    }
-    animate();
-    console.log('Animation loop started');
-
-    // Full game logic (commented out for debugging, uncomment after verifying Socket.IO works)
-    /*
     // Check if Socket.IO is loaded
     if (!window.io) {
       console.error('Socket.IO not loaded. Check server configuration.');
@@ -388,6 +370,37 @@ document.addEventListener('DOMContentLoaded', () => {
       playExplosionSound();
     }
 
+    function playComplexSound(frequencies, duration, types, volumes) {
+      if (isMuted) return;
+      frequencies.forEach((freq, i) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.type = types[i];
+        oscillator.frequency.value = freq;
+        gainNode.gain.value = volumes[i];
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration);
+      });
+    }
+
+    function playEngineSound() {
+      if (isMuted || isDestroyed) return;
+      playComplexSound([100, 150], 0.1, ['sawtooth', 'sine'], [0.2, 0.1]);
+      setTimeout(playEngineSound, 100);
+    }
+
+    function playShootSound() {
+      playComplexSound([500, 700], 0.1, ['square', 'sine'], [0.4, 0.2]);
+    }
+
+    function playExplosionSound() {
+      playComplexSound([80, 120, 200], 0.3, ['sawtooth', 'square', 'sine'], [0.6, 0.4, 0.2]);
+    }
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
     function animate() {
       requestAnimationFrame(animate);
       world.step(1 / 60);
@@ -497,10 +510,10 @@ document.addEventListener('DOMContentLoaded', () => {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
-    */
   }
 
-  let isDestroyed = false; // Define globally to avoid reference errors
+  let health = 100; // Define globally to avoid reference errors
+  let score = 0; // Define globally to avoid reference errors
 
   function createTextSprite(message) {
     const canvas = document.createElement('canvas');
