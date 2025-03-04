@@ -24,15 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     canvas.style.display = 'block'; // Ensure canvas is visible
-    canvas.style.width = '100%'; // Ensure full width
-    canvas.style.height = '100%'; // Ensure full height
+    canvas.style.width = '100%'; // Full width
+    canvas.style.height = '100%'; // Full height
     hud.style.display = 'block';
-    startGame();
+    startGame(canvas); // Pass canvas to startGame
   });
 
-  function startGame() {
+  function startGame(canvas) {
     console.log('startGame called');
-    
+
     // Basic Three.js setup
     if (!window.THREE) {
       console.error('Three.js not loaded');
@@ -40,9 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); // Use existing canvas
     renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    renderer.setPixelRatio(window.devicePixelRatio); // Improve sharpness on high-DPI screens
     console.log('Renderer initialized', renderer.domElement);
 
     // Check if Socket.IO is loaded
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const bodyGeometry = new THREE.BoxGeometry(4, 1, 2);
       const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
       const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.position.set(0, 0.5, 0);
+      body.position.set(0, 0.5, 0); // Align with chassis
       carGroup.add(body);
 
       const cabinGeometry = new THREE.BoxGeometry(2, 0.8, 1.8);
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 32);
       const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
       const wheelPositions = [
-        [-1.5, 0.25, 1], [-1.5, 0.25, -1], [1.5, 0.25, 1], [1.5, 0.25, -1],
+        [-1, 0, 1], [-1, 0, -1], [1, 0, 1], [1, 0, -1], // Adjusted to align with physics
       ];
       const wheels = [];
       wheelPositions.forEach((pos) => {
