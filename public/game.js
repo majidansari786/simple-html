@@ -23,29 +23,27 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Canvas element not found in the DOM');
       return;
     }
-    canvas.style.display = 'block'; // Ensure canvas is visible
-    canvas.style.width = '100%'; // Full width
-    canvas.style.height = '100%'; // Full height
+    canvas.style.display = 'block';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
     hud.style.display = 'block';
-    startGame(canvas); // Pass canvas to startGame
+    startGame(canvas);
   });
 
   function startGame(canvas) {
     console.log('startGame called');
 
-    // Basic Three.js setup
     if (!window.THREE) {
       console.error('Three.js not loaded');
       return;
     }
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); // Use existing canvas
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio); // Improve sharpness on high-DPI screens
+    renderer.setPixelRatio(window.devicePixelRatio);
     console.log('Renderer initialized', renderer.domElement);
 
-    // Check if Socket.IO is loaded
     if (!window.io) {
       console.error('Socket.IO not loaded. Check server configuration.');
       return;
@@ -63,14 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
     groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
     world.addBody(groundBody);
 
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
+    const groundGeometry = new THREE.PlaneGeometry(200, 200);
     const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
 
     const chassisShape = new CANNON.Box(new CANNON.Vec3(2, 0.5, 1));
-    const chassisBody = new CANNON.Body({ mass: 1 });
+    const chassisBody = new CANNON.Body({ mass: 75 }); // Increased mass for stability
     chassisBody.addShape(chassisShape);
     chassisBody.position.set(0, 2, 0);
 
@@ -78,21 +76,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const wheelOptions = {
       radius: 0.5,
       directionLocal: new CANNON.Vec3(0, -1, 0),
-      suspensionStiffness: 30,
+      suspensionStiffness: 50, // Increased for better stability
       suspensionRestLength: 0.3,
-      frictionSlip: 5,
+      frictionSlip: 10, // Increased for better grip
       dampingRelaxation: 2.3,
       dampingCompression: 4.4,
-      maxSuspensionForce: 100000,
+      maxSuspensionForce: 150000, // Increased for stability
       rollInfluence: 0.01,
       axleLocal: new CANNON.Vec3(1, 0, 0),
       chassisConnectionPointLocal: new CANNON.Vec3(),
       maxSuspensionTravel: 0.3,
     };
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(-1, 0, 1) });
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(-1, 0, -1) });
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(1, 0, 1) });
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(1, 0, -1) });
+    const wheelPositions = [
+      new CANNON.Vec3(-1.5, -0.5, 1),  // Front-left
+      new CANNON.Vec3(-1.5, -0.5, -1), // Front-right
+      new CANNON.Vec3(1.5, -0.5, 1),   // Rear-left
+      new CANNON.Vec3(1.5, -0.5, -1),  // Rear-right
+    ];
+    wheelPositions.forEach(pos => vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: pos }));
     vehicle.addToWorld(world);
 
     function createCar() {
@@ -100,25 +101,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const bodyGeometry = new THREE.BoxGeometry(4, 1, 2);
       const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
       const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-      body.position.set(0, 0.5, 0); // Align with chassis
       carGroup.add(body);
 
       const cabinGeometry = new THREE.BoxGeometry(2, 0.8, 1.8);
       const cabinMaterial = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
       const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
-      cabin.position.set(0, 1.3, 0);
+      cabin.position.set(0, 0.8, 0);
       carGroup.add(cabin);
 
-      const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 32);
+      const wheelGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 32); // Slightly taller for better visibility
       const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
-      const wheelPositions = [
-        [-1, 0, 1], [-1, 0, -1], [1, 0, 1], [1, 0, -1], // Adjusted to align with physics
-      ];
       const wheels = [];
       wheelPositions.forEach((pos) => {
         const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-        wheel.position.set(pos[0], pos[1], pos[2]);
+        wheel.position.copy(pos); // Match physics positions exactly
         wheel.rotation.z = Math.PI / 2;
+        wheel.castShadow = true; // Optional: Add shadows for better visualization
         carGroup.add(wheel);
         wheels.push(wheel);
       });
@@ -131,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let carWheels = carData.wheels;
     scene.add(car);
     let nameSprite = createTextSprite(playerName);
-    nameSprite.position.set(0, 2.5, 0);
+    nameSprite.position.set(0, 2, 0);
     car.add(nameSprite);
 
     const playerNameSprites = {};
@@ -151,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           scene.add(playerCars[id]);
           playerNameSprites[id] = createTextSprite(players[id].name);
-          playerNameSprites[id].position.set(0, 2.5, 0);
+          playerNameSprites[id].position.set(0, 2, 0);
           playerCars[id].add(playerNameSprites[id]);
         }
         if (playerCars[id]) {
@@ -184,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
       leaderboardDiv.style.display = 'block';
     });
 
-    const roadGeometry = new THREE.PlaneGeometry(10, 100);
+    const roadGeometry = new THREE.PlaneGeometry(20, 200);
     const roadMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
     const road = new THREE.Mesh(roadGeometry, roadMaterial);
     road.rotation.x = -Math.PI / 2;
@@ -204,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       world.addBody(buildingBody);
     }
-    addBuilding(10, 10, 5, 10, 5);
+    addBuilding(30, 30, 10, 20, 10);
 
     const collectibles = [];
     function addCollectible(x, z) {
@@ -229,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ambientLight = new THREE.AmbientLight(0x404040);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 10, 5);
+    directionalLight.position.set(5, 20, 5);
     scene.add(directionalLight);
 
     const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, Space: false };
@@ -240,28 +238,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.addEventListener('keyup', (e) => keys[e.key] = false);
 
-    const maxForce = 1000;
-    const maxSteerVal = Math.PI / 4;
+    const maxForce = 1500;
+    const maxSteerVal = Math.PI / 8;
     function updateVehicle() {
+      const frontWheels = [0, 1];
+      const rearWheels = [2, 3];
+
       if (keys.ArrowUp) {
-        vehicle.applyEngineForce(-maxForce, 2);
-        vehicle.applyEngineForce(-maxForce, 3);
+        rearWheels.forEach(i => vehicle.applyEngineForce(-maxForce, i));
       } else if (keys.ArrowDown) {
-        vehicle.applyEngineForce(maxForce, 2);
-        vehicle.applyEngineForce(maxForce, 3);
+        rearWheels.forEach(i => vehicle.applyEngineForce(maxForce, i));
       } else {
-        vehicle.applyEngineForce(0, 2);
-        vehicle.applyEngineForce(0, 3);
+        rearWheels.forEach(i => vehicle.applyEngineForce(0, i));
       }
+
       if (keys.ArrowLeft) {
-        vehicle.setSteeringValue(maxSteerVal, 0);
-        vehicle.setSteeringValue(maxSteerVal, 1);
+        frontWheels.forEach(i => vehicle.setSteeringValue(maxSteerVal, i));
       } else if (keys.ArrowRight) {
-        vehicle.setSteeringValue(-maxSteerVal, 0);
-        vehicle.setSteeringValue(-maxSteerVal, 1);
+        frontWheels.forEach(i => vehicle.setSteeringValue(-maxSteerVal, i));
       } else {
-        vehicle.setSteeringValue(0, 0);
-        vehicle.setSteeringValue(0, 1);
+        frontWheels.forEach(i => vehicle.setSteeringValue(0, i));
       }
     }
 
@@ -312,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         carWheels = carData.wheels;
         scene.add(car);
         nameSprite = createTextSprite(playerName);
-        nameSprite.position.set(0, 2.5, 0);
+        nameSprite.position.set(0, 2, 0);
         car.add(nameSprite);
 
         isDestroyed = false;
@@ -407,16 +403,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (car && !isDestroyed) {
         updateVehicle();
+
+        // Sync car body with chassis
         car.position.copy(chassisBody.position);
         car.quaternion.copy(chassisBody.quaternion);
 
+        // Sync wheels with physics, ensuring proper alignment and rotation
         for (let i = 0; i < vehicle.wheelInfos.length; i++) {
           vehicle.updateWheelTransform(i);
           const transform = vehicle.wheelInfos[i].worldTransform;
           carWheels[i].position.copy(transform.position);
           carWheels[i].quaternion.copy(transform.quaternion);
-          const speed = vehicle.wheelInfos[i].rotation;
-          carWheels[i].rotation.x += speed * 0.1;
+          // Use deltaRotation for smooth wheel rotation, scaled appropriately
+          const wheelSpeed = vehicle.wheelInfos[i].deltaRotation * 0.05; // Reduced for stability
+          carWheels[i].rotation.x += wheelSpeed;
         }
 
         if (gameMode === 'deathmatch') {
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
           name: playerName,
           score: score,
         });
-        camera.position.set(car.position.x, car.position.y + 10, car.position.z + 15);
+        camera.position.set(car.position.x, car.position.y + 15, car.position.z + 20);
         camera.lookAt(car.position);
       }
       renderer.render(scene, camera);
@@ -512,8 +512,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  let health = 100; // Define globally to avoid reference errors
-  let score = 0; // Define globally to avoid reference errors
+  let health = 100;
+  let score = 0;
 
   function createTextSprite(message) {
     const canvas = document.createElement('canvas');
