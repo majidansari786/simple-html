@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>3D Car Combat</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    canvas { display: none; width: 100%; height: 100%; } /* Explicitly size the canvas */
+    #start-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #1a1a1a, #4a4a4a);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      z-index: 10;
+      animation: pulse 5s infinite;
+    }
+    @keyframes pulse {
+      0% { background: linear-gradient(45deg, #1a1a1a, #4a4a4a); }
+      50% { background: linear-gradient(45deg, #4a4a4a, #1a1a1a); }
+      100% { background: linear-gradient(45deg, #1a1a1a, #4a4a4a); }
+    }
+    #start-screen h1 {
+      font-size: 4em;
+      text-shadow: 0 0 10px #ff0000, 0 0 20px #ff4500;
+      animation: neon 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes neon {
+      from { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff4500; }
+      to { text-shadow: 0 0 20px #ff0000, 0 0 30px #ff4500; }
+    }
+    #start-screen input[type="text"] {
+      margin: 20px;
+      padding: 10px;
+      font-size: 1.2em;
+      border: 2px solid #ff0000;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      outline: none;
+    }
+    #start-screen select {
+      margin: 10px;
+      padding: 10px;
+      font-size: 1.2em;
+      border: 2px solid #ff0000;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+    }
+    #start-screen button {
+      padding: 15px 30px;
+      font-size: 1.5em;
+      background: #ff0000;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    #start-screen button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px #ff4500;
+    }
+    #start-screen label {
+      margin: 10px;
+      font-size: 1.2em;
+    }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 1.2em;
+      display: none;
+    }
+    #leaderboard {
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      color: white;
+      font-size: 1.2em;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-screen">
+    <h1>3D Car Combat</h1>
+    <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+    <select id="game-mode">
+      <option value="deathmatch">Deathmatch</option>
+      <option value="race">Race</option>
+    </select>
+    <label><input type="checkbox" id="mute-sound"> Mute Sound</label>
+    <button id="enter-game">Enter Game</button>
+  </div>
+  <canvas></canvas> <!-- Explicitly add the canvas element -->
+  <div id="hud">Score: 0 - Health: 100</div>
+  <div id="leaderboard"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
