@@ -5,6 +5,9 @@ const io = require('socket.io')(http);
 
 app.use(express.static('public'));
 
+// Serve a default favicon to prevent 404 errors (optional)
+app.get('/favicon.ico', (req, res) => res.status(204).end()); // Return no content for favicon
+
 let players = {};
 let leaderboard = [];
 
