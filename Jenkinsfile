@@ -10,7 +10,7 @@ pipeline {
 
     stage('Run App') {
       steps {
-        sh 'docker run -d -p 8888:80 --name codtech-app codtech-app'
+        sh 'docker run -d -p 8888:80 --name simple-app codtech-app'
       }
     }
 
