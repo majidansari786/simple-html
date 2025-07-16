@@ -1,13 +1,6 @@
 pipeline {
   agent any
 
-  stages {
-    stage('Clone Repo') {
-      steps {
-        git 'https://github.com/majidansari786/simple-html.git'
-      }
-    }
-
     stage('Build Image') {
       steps {
         sh 'docker build -t codtech-app .'
